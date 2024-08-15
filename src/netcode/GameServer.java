@@ -1,6 +1,7 @@
 package netcode;
 
 import java.net.*;
+import java.util.ArrayList;
 import java.io.*;
 
 public class GameServer {
@@ -8,23 +9,29 @@ public class GameServer {
     private ServerSocket serverSocket;
     private int numPlayers;
     private int maxPlayers;
+    public int FPS = 60;
     private int networkInterval = (int) Math.round(1000 / 60);
     
-    private Socket p1Socket;
-    private Socket p2Socket;
-    private ReadFromClient p1ReadRunnable, p2ReadRunnable;
-    private WriteToClient p1WriteRunnable, p2WriteRunnable;
+    public ArrayList<Socket> pSockets;
+    public ArrayList<ReadFromClient> pReadRunnables;
+    public ArrayList<WriteToClient> pWriteRunnables;
 
-    private double p1x, p1y, p2x, p2y;
+    public ArrayList<Double> pxList;
+    public ArrayList<Double> pyList;
 
     public GameServer() {
         System.out.println("======GAME SERVER======");
         numPlayers = 0;
         maxPlayers = 2;
-        p1x = 100;
-        p1y = 400;
-        p2x = 490;
-        p2y = 400;
+        pSockets = new ArrayList<Socket>();
+        pReadRunnables = new ArrayList<ReadFromClient>();
+        pWriteRunnables = new ArrayList<WriteToClient>();
+        pxList = new ArrayList<Double>();
+        pyList = new ArrayList<Double>();
+        pxList.add(0, 100.);
+        pyList.add(0, 400.);
+        pxList.add(1, 490.);
+        pyList.add(1, 400.);
 
         try {
             serverSocket = new ServerSocket(1234);
@@ -57,126 +64,40 @@ public class GameServer {
                 // send player id
                 out.writeInt(numPlayers);
 
+                // send network interval (interval that network sends and recieves data at)
+                out.writeInt(networkInterval);
+
                 // create reading and writing objects
-                ReadFromClient readFromClient = new ReadFromClient(numPlayers, in);
-                WriteToClient writeToClient = new WriteToClient(numPlayers, out, networkInterval);
+                ReadFromClient readFromClient = new ReadFromClient(this, numPlayers, in);
+                WriteToClient writeToClient = new WriteToClient(this, numPlayers, out, networkInterval);
 
                 // assign proper fields
-                if (numPlayers == 1) {
-                    p1Socket = socket;
-                    p1ReadRunnable = readFromClient;
-                    p1WriteRunnable = writeToClient;
-                } else {
-                    p2Socket = socket;
-                    p2ReadRunnable = readFromClient;
-                    p2WriteRunnable = writeToClient;
-                }
+                pSockets.add(socket);
+                pReadRunnables.add(readFromClient);
+                pWriteRunnables.add(writeToClient);
             }
+            // stat the game
             System.out.println("No longer accepting connections");
-            p1WriteRunnable.sendStartMessage();
-            p2WriteRunnable.sendStartMessage();
-            new Thread(p1ReadRunnable).start();
-            new Thread(p2ReadRunnable).start();
-            new Thread(p1WriteRunnable).start();
-            new Thread(p2WriteRunnable).start();
+            for (int i=0; i<numPlayers; i++) {
+                pWriteRunnables.get(i).sendStartMessage();
+                new Thread(pReadRunnables.get(i)).start();
+                new Thread(pWriteRunnables.get(i)).start();
+            }
         } catch (IOException e) {
             System.out.println("Error in acceptConnections in GameServer class");
         }
     }
 
-    private class ReadFromClient implements Runnable {
-
-        private int playerID;
-        private DataInputStream dataIn;
-
-        public ReadFromClient(int playerID, DataInputStream dataIn) {
-            this.playerID = playerID;
-            this.dataIn = dataIn;
-            System.out.println("Read from client #" + playerID + " created");
-        }
-        @Override
-        public void run() {
-            while (true) {
-                try {
-                    if (playerID == 1) {
-                        p1x = dataIn.readDouble();
-                        p1y = dataIn.readDouble();
-                    } else {
-                        p2x = dataIn.readDouble();
-                        p2y = dataIn.readDouble();
-                    }
-                } catch (IOException e) {
-                    System.out.println("Player #" + playerID + " has left the game");
-                    closeEverything();
-                    break;
-                }
-            }
-            
-        }
-    }
-    private class WriteToClient implements Runnable {
-
-        private int interval;
-        private int playerID;
-        private DataOutputStream dataOut;
-
-        public WriteToClient(int playerID, DataOutputStream dataOut, int interval) {
-            this.playerID = playerID;
-            this.dataOut = dataOut;
-            System.out.println("Write to client #" + playerID + " created");
-        }
-        @Override
-        public void run() {
-            while (true) {
-                try {
-                    if (playerID == 1) {
-                        dataOut.writeDouble(p2x);
-                        dataOut.writeDouble(p2y);
-                        dataOut.flush();
-                    } else {
-                        dataOut.writeDouble(p1x);
-                        dataOut.writeDouble(p1y);
-                        dataOut.flush();
-                    }
-                    try {
-                        Thread.sleep(interval);
-                    } catch (InterruptedException e) {
-                        //System.out.println("error when thread is sleeping when writing from the server to the client");
-                        //e.printStackTrace();
-                        closeEverything();
-                        break;
-                    }
-                } catch (IOException e) {
-                    closeEverything();
-                    break;
-                    //System.out.println("error when writing to client from server");
-                    //e.printStackTrace();
-                }
-            }
-            
-        }
-    
-        public void sendStartMessage() {
-            try {
-                dataOut.writeUTF("Both players have joined. The game will start soon!");
-            } catch (IOException e) {
-                //System.out.println("error when sending start message from the server");
-                //e.printStackTrace();
-                closeEverything();
-            }
-        }
-    }
-
-    private void closeEverything() {
+    // closes all of the connections
+    public void closeEverything() {
         try {
             if (serverSocket != null) {
                 serverSocket.close();
             }
-            if (p1Socket != null) {
-                p1Socket.close();
-            }
-            if (p2Socket != null) {
-                p2Socket.close();
+            for (Socket pSocket : pSockets) {
+                if (pSocket != null) {
+                    pSocket.close();
+                }
             }
         } catch (IOException e) {
             e.printStackTrace();

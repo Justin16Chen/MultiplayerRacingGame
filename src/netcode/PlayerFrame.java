@@ -26,7 +26,7 @@ public class PlayerFrame extends JFrame {
     int playerID;
     private ReadFromServer readFromServerRunnable;
     private WriteToServer writeToServerRunnable;
-    private int networkInterval = (int) Math.round(1000 / 60);
+    private int networkInterval;
 
 
     // input
@@ -52,9 +52,12 @@ public class PlayerFrame extends JFrame {
             playerID = in.readInt();
             System.out.println("You are player #" + playerID);
 
+            // read network interval
+            networkInterval = in.readInt();
+
             // instantiate reading and writing runnables
-            readFromServerRunnable = new ReadFromServer(in);
-            writeToServerRunnable = new WriteToServer(out, networkInterval);
+            readFromServerRunnable = new ReadFromServer(this, in);
+            writeToServerRunnable = new WriteToServer(this, out, networkInterval);
             readFromServerRunnable.waitForStartMessage();
 
         } catch (IOException e) {
@@ -66,6 +69,7 @@ public class PlayerFrame extends JFrame {
 
     // sets up the window
     public void setupGUI() {
+        
         contentPane = this.getContentPane();
         this.setTitle("Player #" + playerID);
         contentPane.setPreferredSize(new Dimension(width, height));
@@ -80,17 +84,23 @@ public class PlayerFrame extends JFrame {
     }
     // creates the sprites for the game
     private void createSprites() {
+
         if (playerID == 1) {
             player = new PlayerSprite(100, 400, 50, 50, Color.BLUE);
+            player.playerID = 1;
             enemy  = new PlayerSprite(490, 400, 50, 50, Color.RED );
+            enemy.playerID = 2;
         } else {
             player = new PlayerSprite(490, 400, 50, 50, Color.RED );
+            player.playerID = 2;
             enemy  = new PlayerSprite(100, 400, 50, 50, Color.BLUE);
+            enemy.playerID = 1;
         }
     }
     
     // adds input listeners to the window
     public void setupInputListeners() {
+
         keyInput = new KeyInput();
         mouseInput = new MouseInput();
         this.addKeyListener(keyInput);
@@ -100,6 +110,7 @@ public class PlayerFrame extends JFrame {
     
     // starts and manages the game loop
     public void startGameLoop() {
+
         // in milliseconds (ms) (60 FPS = 1000/60)
         int interval = (int) (1000/60);
         double secondsInterval = interval / 1000;
@@ -120,6 +131,7 @@ public class PlayerFrame extends JFrame {
     }
     // game loop
     private void updateGame(double interval) {
+
         int hdir = keyInput.keyDownInt("D") - keyInput.keyDownInt("A");
         int vdir = keyInput.keyDownInt("S") - keyInput.keyDownInt("W");
 
@@ -129,9 +141,16 @@ public class PlayerFrame extends JFrame {
 
     // starts the threads with the reading and writing to server runnables
     public void startInputOutputStreams() {
+
+        // allow the player info to be sent to the server
+        readFromServerRunnable.setPlayers(player, enemy);
+        writeToServerRunnable.setPlayers(player, enemy);
+
+        // start the runnables
         new Thread(readFromServerRunnable).start();
         new Thread(writeToServerRunnable).start();
     }
+    
     // draw function
     private class DrawingComponent extends JComponent {
          
@@ -139,75 +158,8 @@ public class PlayerFrame extends JFrame {
             Graphics2D g2 = (Graphics2D) g;
             player.drawSprite(g2);
             enemy.drawSprite(g2);
-        }
-    }
-
-    private class ReadFromServer implements Runnable {
-        
-        private DataInputStream dataIn;
-
-        public ReadFromServer(DataInputStream dataIn) {
-            this.dataIn = dataIn;
-            System.out.println("read from server runnable created");
-        }
-
-        @Override
-        public void run() {
-            try {
-                while (true) {
-                    enemy.setX(dataIn.readDouble());
-                    enemy.setY(dataIn.readDouble());
-                }
-            } catch(IOException e) {
-                closeEverything();
-                //System.out.println("error when reading data from the server");
-                //e.printStackTrace();
-            }
-        }
-
-        public void waitForStartMessage() {
-            try {
-                String startMessage = dataIn.readUTF();
-                System.out.println(startMessage);
-            } catch(IOException e) {
-                closeEverything();
-                //System.out.println("error when waiting for the starting message");
-                //e.printStackTrace();
-            }
-        }
-    }
-
-    private class WriteToServer implements Runnable {
-        
-        private int interval;
-        private DataOutputStream dataOut;
-
-        public WriteToServer(DataOutputStream dataOut, int interval) {
-            this.dataOut = dataOut;
-            this.interval = interval;
-            System.out.println("write to server runnable created");
-        }
-
-        @Override
-        public void run() {
-            try {
-                while(true) {
-                    // send the x and y
-                    dataOut.writeDouble(player.getX());
-                    dataOut.writeDouble(player.getY());
-                    dataOut.flush();
-                    try {
-                        Thread.sleep(interval);
-                    } catch (InterruptedException e) {
-                        closeEverything();
-                        //System.out.println("Interrupted while player #" + playerID + " thread was sleeping");
-                    }
-                }
-            } catch (IOException e) {
-                closeEverything();
-                //System.out.println("error when writing to server on player " + playerID);
-                //e.printStackTrace();
-            }
+            g.drawString(String.valueOf(playerID), (int) player.getX() + 5, (int) player.getY() - 50);
+            g.drawString(String.valueOf(player.getX() + ", " + player.getY()), (int) player.getX() + 5, (int) player.getY() - 20);
         }
     }
     

@@ -5,6 +5,7 @@ import java.awt.geom.*;
 
 public class PlayerSprite {
     
+    public int playerID;
     private double x, y, width, height;
     private Color color;
     private double speed = 5;
