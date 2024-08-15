@@ -1,4 +1,4 @@
-package netcode;
+package netcode.Server;
 
 import java.io.DataInputStream;
 import java.io.IOException;
@@ -19,8 +19,8 @@ public class ReadFromClient extends ServerStream implements Runnable {
                 double x = dataIn.readDouble();
                 double y = dataIn.readDouble();
                 //System.out.println("ID: " + playerID + " | x: " + x + " | y: " + y);
-                pxList.set(playerID - 1, x);
-                pyList.set(playerID - 1, y);
+                pxList.set(playerID, x);
+                pyList.set(playerID, y);
             }
             catch (IOException e) {
                 System.out.println("Player #" + playerID + " has left the game");

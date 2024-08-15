@@ -6,13 +6,14 @@ import java.awt.geom.*;
 public class PlayerSprite {
     
     public int playerID;
-    private double x, y, width, height;
+    private double x, y;
+    private int width, height;
     private Color color;
     private double speed = 5;
 
-    public PlayerSprite(double x, double y, double width, double height, Color color) {
-        this.x = x;
-        this.y = y;
+    public PlayerSprite(double x, double y, int width, int height, Color color) {
+        this.x = x - width * 0.5;
+        this.y = y - height;
         this.width = width;
         this.height = height;
         this.color = color;
@@ -41,6 +42,12 @@ public class PlayerSprite {
     }
     public double getY() {
         return y;
+    }
+    public int getWidth() {
+        return width;
+    }
+    public int getHeight() {
+        return height;
     }
     public double getSpeed() {
         return speed;

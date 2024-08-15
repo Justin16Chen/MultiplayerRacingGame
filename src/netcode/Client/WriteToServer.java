@@ -1,7 +1,9 @@
-package netcode;
+package netcode.Client;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
+
+import gameplay.PlayerSprite;
 
 public class WriteToServer extends ClientStream implements Runnable {
         
@@ -12,12 +14,15 @@ public class WriteToServer extends ClientStream implements Runnable {
         super(playerFrame);
         this.dataOut = dataOut;
         this.interval = interval;
+        //System.out.println("write to server runnable created");
     }
 
     @Override
     public void run() {
         try {
             while(true) {
+                PlayerSprite player = players.get(playerFrame.playerID);
+                
                 // send the x and y
                 dataOut.writeDouble(player.getX());
                 dataOut.writeDouble(player.getY());

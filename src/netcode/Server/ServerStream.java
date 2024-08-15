@@ -1,4 +1,4 @@
-package netcode;
+package netcode.Server;
 
 import java.util.ArrayList;
 

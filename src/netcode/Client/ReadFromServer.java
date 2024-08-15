@@ -1,15 +1,16 @@
-package netcode;
+package netcode.Client;
 
 import java.io.DataInputStream;
 import java.io.IOException;
 
 public class ReadFromServer extends ClientStream implements Runnable {
     
-    private DataInputStream dataIn;
+    public DataInputStream dataIn;
 
     public ReadFromServer(PlayerFrame playerFrame, DataInputStream dataIn) {
         super(playerFrame);
         this.dataIn = dataIn;
+        //System.out.println("read from server runnable created");
     }
 
     @Override
@@ -19,11 +20,10 @@ public class ReadFromServer extends ClientStream implements Runnable {
                 int playerID = dataIn.readInt();
                 double x = dataIn.readDouble();
                 double y = dataIn.readDouble();
-                if (playerFrame.playerID == playerID) {
-                }
-                else if (enemy.playerID == playerID) {
-                    enemy.setX(x);
-                    enemy.setY(y);
+                //System.out.println("player #" + playerFrame.playerID + " is recieving (" + x + ", " + y + ") from player #" + playerID);
+                if (playerFrame.playerID != playerID) {
+                    playerFrame.players.get(playerID).setX(x);
+                    playerFrame.players.get(playerID).setY(y);
                 }
                 //System.out.println("p" + playerID + ": x: " + x + " | y: " + y);
             }
@@ -34,13 +34,18 @@ public class ReadFromServer extends ClientStream implements Runnable {
         }
     }
 
-    public void waitForStartMessage() {
+    public void recieveStartingData() {
         try {
+            // get the starting message from the server
             String startMessage = dataIn.readUTF();
-            System.out.println(startMessage);
-        } catch(IOException e) {
+            System.out.println("SERVER: " + startMessage);
+
+            // get final number of players
+            playerFrame.numPlayers = dataIn.readInt();
+
+        } catch (IOException e) {
             playerFrame.closeEverything();
-            //System.out.println("error when waiting for the starting message");
+            //System.out.println("Error in getting player info");
             //e.printStackTrace();
         }
     }

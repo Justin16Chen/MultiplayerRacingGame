@@ -1,4 +1,4 @@
-package netcode;
+package netcode.Client;
 import javax.swing.*;
 
 import gameplay.*;
@@ -7,6 +7,7 @@ import input.*;
 import java.awt.event.*;
 import java.io.*;
 import java.net.*;
+import java.util.ArrayList;
 import java.awt.*;
 
 public class PlayerFrame extends JFrame {
@@ -16,14 +17,15 @@ public class PlayerFrame extends JFrame {
     private Container contentPane;
 
     // gameplay elements
-    private PlayerSprite player;
-    private PlayerSprite enemy;
+    public ArrayList<PlayerSprite> players;
     private DrawingComponent dc;
     private Timer gameLoopTimer;
+    public ArrayList<Double[]> spawnPositions;
 
     // netcode elements
     private Socket socket;
     int playerID;
+    int numPlayers;
     private ReadFromServer readFromServerRunnable;
     private WriteToServer writeToServerRunnable;
     private int networkInterval;
@@ -40,6 +42,7 @@ public class PlayerFrame extends JFrame {
 
     // connects client to server
     private void connectToServer() {
+        System.out.println("connecting to server");
         try {
             // create socket to connect to server
             socket = new Socket("localhost", 1234);
@@ -58,18 +61,30 @@ public class PlayerFrame extends JFrame {
             // instantiate reading and writing runnables
             readFromServerRunnable = new ReadFromServer(this, in);
             writeToServerRunnable = new WriteToServer(this, out, networkInterval);
-            readFromServerRunnable.waitForStartMessage();
 
+            System.out.println("created reading and writing to server runnables");
         } catch (IOException e) {
             closeEverything();
-            //System.out.println("Error in connectToServer in PlayerFrame class");
+            System.out.println("failed to connect to server");
             //e.printStackTrace();
+        }
+    }
+
+    public void getPlayerInfo() {
+        
+        readFromServerRunnable.recieveStartingData();
+        
+        players = new ArrayList<PlayerSprite>();
+        spawnPositions = new ArrayList<Double[]>();
+
+        for (int i=0; i<numPlayers; i++) {
+            Double[] position = {100., 100.};
+            spawnPositions.add(position);
         }
     }
 
     // sets up the window
     public void setupGUI() {
-        
         contentPane = this.getContentPane();
         this.setTitle("Player #" + playerID);
         contentPane.setPreferredSize(new Dimension(width, height));
@@ -84,23 +99,17 @@ public class PlayerFrame extends JFrame {
     }
     // creates the sprites for the game
     private void createSprites() {
-
-        if (playerID == 1) {
-            player = new PlayerSprite(100, 400, 50, 50, Color.BLUE);
-            player.playerID = 1;
-            enemy  = new PlayerSprite(490, 400, 50, 50, Color.RED );
-            enemy.playerID = 2;
-        } else {
-            player = new PlayerSprite(490, 400, 50, 50, Color.RED );
-            player.playerID = 2;
-            enemy  = new PlayerSprite(100, 400, 50, 50, Color.BLUE);
-            enemy.playerID = 1;
+        System.out.println("number of players: " + numPlayers);
+        for (int i=0; i<numPlayers; i++) {
+            int currentID = i;
+            Double[] position = spawnPositions.get(i);
+            Color color = currentID == playerID ? Color.BLUE : Color.RED;
+            players.add(new PlayerSprite(position[0], position[1], 50, 50, color));
         }
     }
     
     // adds input listeners to the window
     public void setupInputListeners() {
-
         keyInput = new KeyInput();
         mouseInput = new MouseInput();
         this.addKeyListener(keyInput);
@@ -110,7 +119,6 @@ public class PlayerFrame extends JFrame {
     
     // starts and manages the game loop
     public void startGameLoop() {
-
         // in milliseconds (ms) (60 FPS = 1000/60)
         int interval = (int) (1000/60);
         double secondsInterval = interval / 1000;
@@ -131,6 +139,7 @@ public class PlayerFrame extends JFrame {
     }
     // game loop
     private void updateGame(double interval) {
+        PlayerSprite player = players.get(playerID);
 
         int hdir = keyInput.keyDownInt("D") - keyInput.keyDownInt("A");
         int vdir = keyInput.keyDownInt("S") - keyInput.keyDownInt("W");
@@ -141,10 +150,9 @@ public class PlayerFrame extends JFrame {
 
     // starts the threads with the reading and writing to server runnables
     public void startInputOutputStreams() {
-
         // allow the player info to be sent to the server
-        readFromServerRunnable.setPlayers(player, enemy);
-        writeToServerRunnable.setPlayers(player, enemy);
+        readFromServerRunnable.setPlayers(players);
+        writeToServerRunnable.setPlayers(players);
 
         // start the runnables
         new Thread(readFromServerRunnable).start();
@@ -156,10 +164,12 @@ public class PlayerFrame extends JFrame {
          
         protected void paintComponent(Graphics g) {
             Graphics2D g2 = (Graphics2D) g;
-            player.drawSprite(g2);
-            enemy.drawSprite(g2);
-            g.drawString(String.valueOf(playerID), (int) player.getX() + 5, (int) player.getY() - 50);
-            g.drawString(String.valueOf(player.getX() + ", " + player.getY()), (int) player.getX() + 5, (int) player.getY() - 20);
+            
+            for (PlayerSprite player : players) {
+                player.drawSprite(g2);
+                g.drawString(String.valueOf(playerID), (int) player.getX() + 5, (int) player.getY() - 50);
+                g.drawString(String.valueOf(player.getX() + ", " + player.getY()), (int) player.getX() + 5, (int) player.getY() - 20);
+            }
         }
     }
     
@@ -171,10 +181,12 @@ public class PlayerFrame extends JFrame {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        dispose();
     }
     public static void main(String[] args) {
         PlayerFrame pf = new PlayerFrame(640, 480);
         pf.connectToServer();
+        pf.getPlayerInfo();
         pf.setupGUI();
         pf.setupInputListeners();
         pf.startGameLoop();

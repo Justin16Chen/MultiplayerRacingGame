@@ -1,17 +1,18 @@
-package netcode;
+package netcode.Client;
+
+import java.util.ArrayList;
 
 import gameplay.PlayerSprite;
 
 public class ClientStream {
 
     protected PlayerFrame playerFrame;
-    protected PlayerSprite player, enemy;
+    protected ArrayList<PlayerSprite> players;
 
     public ClientStream(PlayerFrame playerFrame) {
         this.playerFrame = playerFrame;
     }
-    public void setPlayers(PlayerSprite player, PlayerSprite enemy) {
-        this.player = player;
-        this.enemy = enemy;
+    public void setPlayers(ArrayList<PlayerSprite> players) {
+        this.players = players;
     }
 }

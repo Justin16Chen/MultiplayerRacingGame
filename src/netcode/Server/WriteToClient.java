@@ -1,4 +1,4 @@
-package netcode;
+package netcode.Server;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -6,7 +6,7 @@ import java.io.IOException;
 public class WriteToClient extends ServerStream implements Runnable {
 
     private int interval;
-    private DataOutputStream dataOut;
+    public DataOutputStream dataOut;
 
     public WriteToClient(GameServer gameServer, int playerID, DataOutputStream dataOut, int interval) {
         super(gameServer, playerID);
@@ -19,17 +19,16 @@ public class WriteToClient extends ServerStream implements Runnable {
         while (true) {
             try {
                 for (int i=0; i<pxList.size(); i++) {
-                    int currentID = i + 1;
                     // only send the position data for other players
-                    if (playerID == currentID) {
+                    if (playerID == i) {
                         continue;
                     }
                     // write the player index, and then their x and y position
-                    dataOut.writeInt(currentID);
+                    //System.out.println("Writing to p" + playerID + " | p" + i + " position: " + pxList.get(i) + " | " + pyList.get(i));
+                    dataOut.writeInt(i);
                     dataOut.writeDouble(pxList.get(i));
                     dataOut.writeDouble(pyList.get(i));
                     dataOut.flush();
-                    //System.out.println("Writing to p" + playerID + " | p" + currentID + " position: " + pxList.get(i) + " | " + pyList.get(i));
                 }
                 try {
                     Thread.sleep(interval);
@@ -47,9 +46,11 @@ public class WriteToClient extends ServerStream implements Runnable {
             }
         } 
     }
-    public void sendStartMessage() {
+    
+    public void sendStartingData() {
         try {
             dataOut.writeUTF("All of the players have joined. The game will start soon!");
+            dataOut.writeInt(gameServer.currentPlayerCount);
         } catch (IOException e) {
             //System.out.println("error when sending start message from the server");
             //e.printStackTrace();
