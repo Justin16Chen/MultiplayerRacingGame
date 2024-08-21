@@ -1,24 +1,21 @@
 package utils;
 import javax.swing.*;
 
-import gameplay.*;
 import input.*;
 
 import java.awt.event.*;
-import java.io.*;
-import java.net.*;
-import java.util.ArrayList;
 import java.awt.*;
 
 public abstract class ParentFrame extends JFrame {
 
     // properties of the JFrame
+    private String title;
     private int width, height;
-    private Container contentPane;
+    protected Container contentPane;
 
     // input
-    private KeyInput keyInput;
-    private MouseInput mouseInput;
+    protected KeyInput keyInput;
+    protected MouseInput mouseInput;
 
     // update loop
     public int FPS = 60;
@@ -30,13 +27,33 @@ public abstract class ParentFrame extends JFrame {
     public ParentFrame(int width, int height) {
         this.width = width;
         this.height = height;
-
-        contentPane = new Container();
+    }
+    public ParentFrame(String title, int width, int height) {
+        this.title = title;
+        this.width = width;
+        this.height = height;
     }
 
     public void setupWindow() {
         contentPane = this.getContentPane();
         contentPane.setPreferredSize(new Dimension(width, height));
+        setTitle(title);
+
+        // allow using Graphics2D to draw to window
+        dc = new DrawingComponent();
+        contentPane.add(dc);
+
+        // setup the GUI for window
+        setupGUI();
+
+        this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        this.pack();
+        this.setVisible(true);
+    }
+    public void setupWindow(String title) {
+        contentPane = this.getContentPane();
+        contentPane.setPreferredSize(new Dimension(width, height));
+        setTitle(title);
         
         // allow using Graphics2D to draw to window
         dc = new DrawingComponent();
@@ -49,6 +66,7 @@ public abstract class ParentFrame extends JFrame {
         this.pack();
         this.setVisible(true);
     }
+    
     public abstract void setupGUI();
     
     // adds input listeners to the window
@@ -83,6 +101,9 @@ public abstract class ParentFrame extends JFrame {
 
                 // call update function
                 update(secondsInterval);
+
+                // repaint
+                repaint();
             }
         };
 
@@ -90,6 +111,7 @@ public abstract class ParentFrame extends JFrame {
         updateLoopTimer = new Timer(interval, al);
         updateLoopTimer.start();
     }
+    
     public abstract void update(int dt);
 
     // draw loop
@@ -101,6 +123,6 @@ public abstract class ParentFrame extends JFrame {
             draw(g2);
         }
     }
+    
     public abstract void draw(Graphics2D g2);
-
 }

@@ -1,4 +1,4 @@
-package netcode.Server;
+package netcode.server;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -8,8 +8,8 @@ public class WriteToClient extends ServerStream implements Runnable {
     private int interval;
     public DataOutputStream dataOut;
 
-    public WriteToClient(GameServer gameServer, int playerID, DataOutputStream dataOut, int interval) {
-        super(gameServer, playerID);
+    public WriteToClient(Server server, int playerID, DataOutputStream dataOut, int interval) {
+        super(server, playerID);
         this.dataOut = dataOut;
         this.interval = interval;
         //System.out.println("Write to client #" + playerID + " created");
@@ -35,11 +35,11 @@ public class WriteToClient extends ServerStream implements Runnable {
                 } catch (InterruptedException e) {
                     //System.out.println("error when thread is sleeping when writing from the server to the client");
                     //e.printStackTrace();
-                    gameServer.closeEverything();
+                    server.closeEverything();
                     break;
                 }
             } catch (IOException e) {
-                gameServer.closeEverything();
+                server.closeEverything();
                 //System.out.println("error when writing to client from server");
                 //e.printStackTrace();
                 break;
@@ -50,11 +50,11 @@ public class WriteToClient extends ServerStream implements Runnable {
     public void sendStartingData() {
         try {
             dataOut.writeUTF("All of the players have joined. The game will start soon!");
-            dataOut.writeInt(gameServer.currentPlayerCount);
+            dataOut.writeInt(server.currentPlayerCount);
         } catch (IOException e) {
             //System.out.println("error when sending start message from the server");
             //e.printStackTrace();
-            gameServer.closeEverything();
+            server.closeEverything();
         }
     }
 }

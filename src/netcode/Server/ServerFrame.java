@@ -1,4 +1,4 @@
-package netcode.Server;
+package netcode.server;
 
 import javax.swing.*;
 import java.awt.*;
@@ -12,7 +12,7 @@ import utils.*;
 
 public class ServerFrame extends JFrame {
 
-    private GameServer gameServer;
+    private Server server;
     private int width, height;
     
     private Container contentPane;
@@ -22,8 +22,8 @@ public class ServerFrame extends JFrame {
     String errorMessage = "Error when connecting to port - try a different port from 1024-49151";
     JButton startServerButton;
 
-    public ServerFrame(GameServer gameServer, int width, int height) {
-        this.gameServer = gameServer;
+    public ServerFrame(Server server, int width, int height) {
+        this.server = server;
         this.width = width;
         this.height = height;
 
@@ -45,7 +45,7 @@ public class ServerFrame extends JFrame {
 
         // setup port text input
         gbc.gridx = 2; gbc.gridy = 1; gbc.insets = new Insets(10, 10, 10, 10);
-        JLabel portLabel = new JLabel("Enter the port to create a server");
+        JLabel portLabel = new JLabel("Enter a port to create a server");
         contentPane.add(portLabel, gbc);
 
         // setup error message label
@@ -88,10 +88,9 @@ public class ServerFrame extends JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
                 int portNumber = Integer.parseInt(portInput.getText());
-                boolean successful = gameServer.createServer(portNumber);
+                boolean successful = server.createServer(portNumber);
                 if (successful) {
-                    gameServer.acceptConnections();
-                    gameServer.start();
+                    server.start();
                 } else {
                     errorMessageLabel.setText(errorMessage);
                 }

@@ -1,4 +1,4 @@
-package netcode.Client;
+package netcode.client;
 
 import java.io.DataInputStream;
 import java.io.IOException;
@@ -7,8 +7,8 @@ public class ReadFromServer extends ClientStream implements Runnable {
     
     public DataInputStream dataIn;
 
-    public ReadFromServer(PlayerFrame playerFrame, DataInputStream dataIn) {
-        super(playerFrame);
+    public ReadFromServer(ConnectFrame connectFrame, DataInputStream dataIn) {
+        super(connectFrame);
         this.dataIn = dataIn;
         //System.out.println("read from server runnable created");
     }
@@ -28,7 +28,7 @@ public class ReadFromServer extends ClientStream implements Runnable {
                 //System.out.println("p" + playerID + ": x: " + x + " | y: " + y);
             }
         } catch(IOException e) {
-            playerFrame.closeEverything();
+            connectFrame.closeEverything();
             //System.out.println("error when reading data from the server");
             //e.printStackTrace();
         }
@@ -44,7 +44,7 @@ public class ReadFromServer extends ClientStream implements Runnable {
             playerFrame.numPlayers = dataIn.readInt();
 
         } catch (IOException e) {
-            playerFrame.closeEverything();
+            connectFrame.closeEverything();
             //System.out.println("Error in getting player info");
             //e.printStackTrace();
         }

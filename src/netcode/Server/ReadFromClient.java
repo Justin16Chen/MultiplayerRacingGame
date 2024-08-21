@@ -1,4 +1,4 @@
-package netcode.Server;
+package netcode.server;
 
 import java.io.DataInputStream;
 import java.io.IOException;
@@ -7,8 +7,8 @@ public class ReadFromClient extends ServerStream implements Runnable {
 
     private DataInputStream dataIn;
 
-    public ReadFromClient(GameServer gameServer, int playerID, DataInputStream dataIn) {
-        super(gameServer, playerID);
+    public ReadFromClient(Server server, int playerID, DataInputStream dataIn) {
+        super(server, playerID);
         this.dataIn = dataIn;
         //System.out.println("Read from client #" + playerID + " created");
     }
@@ -24,7 +24,7 @@ public class ReadFromClient extends ServerStream implements Runnable {
             }
             catch (IOException e) {
                 System.out.println("Player #" + playerID + " has left the game");
-                gameServer.closeEverything();
+                server.closeEverything();
                 break;
             }
         }

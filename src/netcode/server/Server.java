@@ -1,10 +1,10 @@
-package netcode.Server;
+package netcode.server;
 
 import java.net.*;
 import java.util.ArrayList;
 import java.io.*;
 
-public class GameServer {
+public class Server {
     
     protected ServerSocket serverSocket;
     protected int currentPlayerCount;
@@ -24,11 +24,11 @@ public class GameServer {
     protected ArrayList<Double> pxList;
     protected ArrayList<Double> pyList;
 
-    public GameServer() {
+    public Server() {
         System.out.println("======GAME SERVER======");
         currentPlayerCount = 0;
         requiredPlayers = 2;
-        maxPlayers = 4;
+        maxPlayers = 2;
         pSockets = new ArrayList<Socket>();
         pReadRunnables = new ArrayList<ReadFromClient>();
         pWriteRunnables = new ArrayList<WriteToClient>();
@@ -38,11 +38,6 @@ public class GameServer {
             pxList.add(100.);
             pyList.add(100.);
         }
-    }
-
-    // sets up the server GUI 
-    public void setupGUI() {
-        serverFrame = new ServerFrame(this, 640, 480);
     }
 
     // creates the server
@@ -95,17 +90,21 @@ public class GameServer {
                 pReadRunnables.add(readFromClient);
                 pWriteRunnables.add(writeToClient);
             }
-            // stat the game
+
             System.out.println("No longer accepting connections");
 
-            
         } catch (IOException e) {
-            System.out.println("Error in acceptConnections in GameServer class");
+            System.out.println("Error in acceptConnections in Server class");
         }
     }
 
     // starts the game for all of the clients
     public void start() {
+        
+        // get all of the players
+        acceptConnections();
+
+        // start recieving and writing information
         for (int i=0; i<currentPlayerCount; i++) {
             pWriteRunnables.get(i).sendStartingData();
             new Thread(pReadRunnables.get(i)).start();
@@ -131,7 +130,7 @@ public class GameServer {
     }
     
     public static void main(String[] args) {
-        GameServer gs = new GameServer();
-        gs.setupGUI();
+        Server gs = new Server();
+        ServerFrame serverFrame = new ServerFrame(gs, 640, 480);
     }
 }
